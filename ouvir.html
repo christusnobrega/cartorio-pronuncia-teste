@@ -17,21 +17,26 @@ header img{width:42px;height:auto;filter:brightness(0) invert(1)}
 header strong{display:block;font-size:17px;font-weight:600;line-height:1.2}
 header small{display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--soft)}
 h1{font-family:inherit;font-size:15px;font-weight:400;line-height:1.4;color:var(--soft);margin:22px 0 14px}
+.all{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .all[hidden]{display:none}
-.all{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;height:52px;border:0;border-radius:26px;background:#fff;color:var(--bg);font:600 16px/1 inherit;cursor:pointer}
-.all svg{width:18px;height:18px}
+.all button{display:flex;align-items:center;justify-content:center;gap:8px;height:50px;border:0;border-radius:25px;background:#fff;color:var(--bg);font:600 15px/1 inherit;font-family:inherit;cursor:pointer}
+.all svg{width:16px;height:16px}
+.all-label{grid-column:1/-1;font-size:12px;color:var(--soft);margin:0 0 -2px}
 ol{list-style:none;margin:18px 0 0;padding:0}
-li{display:flex;align-items:flex-start;gap:14px;padding:16px 14px;border:1px solid var(--line);border-radius:14px;margin-bottom:10px;transition:border-color .2s,background .2s}
+li{padding:16px;border:1px solid var(--line);border-radius:14px;margin-bottom:10px;transition:border-color .2s,background .2s}
 li.here{border-color:#6b6f78;background:var(--chip)}
 li.playing{border-color:#fff}
-.play{flex:none;width:44px;height:44px;border-radius:50%;border:1px solid #6b6f78;background:transparent;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}
-li.playing .play{background:#fff;color:var(--bg);border-color:#fff}
-.play svg{width:18px;height:18px}
-.name{font:500 24px/1.2 Baskerville,"Times New Roman",serif;margin:2px 0 4px;word-break:break-word}
+.name{font:500 26px/1.2 Baskerville,"Times New Roman",serif;margin:0 0 4px;word-break:break-word}
 .meaning{font-size:14px;color:#c8cbd1;margin:0}
 .origin{font-size:12px;color:var(--soft);margin:2px 0 0}
-.voice{font-size:12px;color:var(--soft);margin:4px 0 0}
-.empty{color:var(--soft)}
+.row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:12px 0 0;font-size:12px;color:var(--soft)}
+.row span{min-width:44px}
+.row button,.row a{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border:1px solid #4a4e56;border-radius:16px;background:transparent;color:#fff;font:500 13px/1 inherit;font-family:inherit;text-decoration:none;cursor:pointer}
+.row a{color:#c8cbd1;border-color:var(--line);padding:5px 11px;font-size:12px}
+.row button.playing{background:#fff;color:var(--bg);border-color:#fff}
+.row button:hover,.row a:hover,.row a:focus-visible{border-color:#9a9ea7;color:#fff}
+.row button.playing:hover{color:var(--bg)}
+.row svg{width:13px;height:13px}
 footer{margin-top:28px;padding-top:16px;border-top:1px solid var(--line);font-size:11px;color:var(--soft)}
 @media (prefers-reduced-motion:reduce){li{transition:none}}
 </style>
@@ -39,14 +44,16 @@ footer{margin-top:28px;padding-top:16px;border-top:1px solid var(--line);font-si
 <body>
 <main>
 <header><img src="sankofa.svg" alt=""><div><strong>Cartório de Restauração Identitária</strong><small>Pronúncia dos sobrenomes</small></div></header>
-<h1 id="title">Toque para ouvir cada sobrenome.</h1>
-<button class="all" id="all" type="button"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 3.5v13l11-6.5z" fill="currentColor"/></svg>Ouvir todos</button>
+<h1 id="title">Escolha a voz e toque para ouvir cada sobrenome.</h1>
+<div class="all" id="all"><p class="all-label">Ouvir todos em sequência</p><button type="button" data-all="m"></button><button type="button" data-all="h"></button></div>
 <ol id="list"></ol>
 <footer>Vozes sintéticas geradas a partir do corpus OpenSLR 86 (Google, CC BY-SA 4.0) e dos modelos MMS (Meta). A pronúncia é uma aproximação.</footer>
 </main>
 <script>
 (async function(){
- const speaker='<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 7.5h3l4-3.5v12l-4-3.5H3z" fill="currentColor"/><path d="M13 7a4 4 0 0 1 0 6M15.2 5a7 7 0 0 1 0 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
+ const playIcon='<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 3.5v13l11-6.5z" fill="currentColor"/></svg>';
+ const downloadIcon='<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3v10M5.5 9 10 13.5 14.5 9M4 16.5h12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+ const VOICES=[['m','Mulher','voz feminina'],['h','Homem','voz masculina']];
  const q=new URLSearchParams(location.search),ids=(q.get('s')||'').split(',').map(s=>s.trim()).filter(Boolean).slice(0,6),here=q.get('d');
  const list=document.getElementById('list'),title=document.getElementById('title'),all=document.getElementById('all');
  let data={};try{data=await (await fetch('sobrenomes.json')).json();}catch(e){}
@@ -54,16 +61,18 @@ footer{margin-top:28px;padding-top:16px;border-top:1px solid var(--line);font-si
  if(!rows.length){title.textContent='Nenhum sobrenome encontrado neste link.';all.hidden=true;return;}
  if(rows.length===1)all.hidden=true;
  const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
- const next={};
- list.innerHTML=rows.map(id=>`<li data-id="${esc(id)}"${id===here?' class="here"':''}><button class="play" type="button" aria-label="Ouvir ${esc(data[id].n)}">${speaker}</button><div><p class="name">${esc(data[id].n)}</p><p class="meaning">${esc(data[id].m)}</p><p class="origin">${esc(data[id].o)}</p><p class="voice" aria-live="polite"></p></div></li>`).join('');
- const audio=new Audio();let queue=[];
- function mark(id){list.querySelectorAll('li').forEach(li=>li.classList.toggle('playing',li.dataset.id===id));}
- function play(id,voice){const v=voice||next[id]||'m';next[id]=v==='m'?'h':'m';const li=list.querySelector(`[data-id="${CSS.escape(id)}"]`);li.querySelector('.voice').textContent=v==='m'?'Voz feminina':'Voz masculina';audio.src=`${v}-${encodeURIComponent(id)}.m4a`;mark(id);return audio.play();}
- audio.onended=()=>{if(queue.length){setTimeout(()=>play(queue.shift(),'m').catch(()=>mark(null)),450);}else mark(null);};
- list.addEventListener('click',e=>{const li=e.target.closest('li');if(!li)return;queue=[];play(li.dataset.id).catch(()=>mark(null));});
- all.addEventListener('click',()=>{queue=rows.slice(1);play(rows[0],'m').catch(()=>mark(null));});
- // tenta tocar o sobrenome tocado na certidão; se o celular bloquear, a pessoa toca no botão
- if(here&&data[here]){play(here,'m').catch(()=>{mark(null);next[here]='m';list.querySelector('li.here .voice').textContent='';});}
+ all.querySelectorAll('[data-all]').forEach(b=>{const [,label]=VOICES.find(([v])=>v===b.dataset.all);b.innerHTML=playIcon+label;b.setAttribute('aria-label','Ouvir todos os sobrenomes, '+label.toLowerCase());});
+ list.innerHTML=rows.map(id=>{const n=esc(data[id].n);return `<li data-id="${esc(id)}"${id===here?' class="here"':''}><p class="name">${n}</p><p class="meaning">${esc(data[id].m)}</p><p class="origin">${esc(data[id].o)}</p>`+
+  `<p class="row"><span>Ouvir:</span>${VOICES.map(([v,label,full])=>`<button type="button" data-voice="${v}" aria-label="Ouvir ${n}, ${full}">${playIcon}${label}</button>`).join('')}</p>`+
+  `<p class="row"><span>Baixar:</span>${VOICES.map(([v,label,full])=>`<a href="${v}-${encodeURIComponent(id)}.m4a" download="${n} (${full}).m4a" aria-label="Baixar ${n}, ${full}">${downloadIcon}${label}</a>`).join('')}</p></li>`;}).join('');
+ const audio=new Audio();let queue=[],queueVoice='m';
+ function mark(id,v){list.querySelectorAll('li').forEach(li=>{const on=li.dataset.id===id;li.classList.toggle('playing',on);li.querySelectorAll('[data-voice]').forEach(b=>b.classList.toggle('playing',on&&b.dataset.voice===v));});}
+ function play(id,v){audio.src=`${v}-${encodeURIComponent(id)}.m4a`;mark(id,v);return audio.play().catch(()=>mark(null));}
+ audio.onended=()=>{if(queue.length)setTimeout(()=>play(queue.shift(),queueVoice),450);else mark(null);};
+ list.addEventListener('click',e=>{const b=e.target.closest('[data-voice]');if(!b)return;queue=[];play(b.closest('li').dataset.id,b.dataset.voice);});
+ all.addEventListener('click',e=>{const b=e.target.closest('[data-all]');if(!b)return;queueVoice=b.dataset.all;queue=rows.slice(1);play(rows[0],queueVoice);});
+ // tenta tocar (voz de mulher) o sobrenome tocado na certidão; se o celular bloquear, a pessoa escolhe a voz no botão
+ if(here&&data[here])play(here,'m');
 })();
 </script>
 </body>
